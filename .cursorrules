@@ -1,0 +1,853 @@
+# File Naming & Organization
+
+## Quick Decisions
+
+**Where should I put this code?**
+- New React component → `components/pages/`, `components/shared/`, or `components/ui/`
+- API call logic → `services/{provider}/{service}/`
+- Reusable function (no React) → `utils/{utilName}/`
+- React hook → `hooks/use{HookName}/`
+- Global state → `stores/{storeName}/`
+- Third-party config → `libs/{libraryName}/`
+
+**What file extension should I use?**
+- Types only → `.types.ts`
+- Constants only → `.constants.ts`
+- Validation schemas → `.schemas.ts`
+- Helper functions → `.utils.ts`
+- Store logic → `.store.ts`
+- Tests → `.test.ts`
+
+**How should I name files and folders?**
+- `app/` routes → kebab-case (`user-profile/page.tsx`)
+- Components → folders: camelCase, files: PascalCase (`userCard/UserCard.tsx`)
+- Everything else → camelCase (`featureFlags/featureFlags.ts`)
+
+## Overview
+- Placement guidelines for shared logic and environment-bound configuration
+- Consistent naming conventions for `app`, `components`, and all other folders/files
+- File extensions mapped to purposes (types, schemas, stores, tests, etc.)
+- Component/page organization patterns and examples
+- Service best practices (structure, schemas, constants, API URLs)
+- Testing patterns: preferred `test.each` with array of objects pattern
+- Next.js page route example and associated page component
+- TypeScript usage summary for `interface` vs `type` (see dedicated rule)
+
+## Directory Overview
+
+```text
+
+src/
+├── app/                # Next.js page routes & layouts
+├── components/
+│   ├── pages/          # Page-level components
+│   ├── shared/         # Shared components for pages
+│   └── ui/             # Shadcn & reusable UI components
+├── hooks/              # Custom React hooks
+├── lib/                # 3rd party package-related files
+├── services/           # API data fetching logic
+├── styles/             # Fonts & Tailwind CSS
+└── utils/              # Reusable functions shared across the app
+
+```
+
+## Placement Guidelines
+- `hooks`, `libs`, `services`, `stores`, `styles`, and `utils` keep cross-application logic organized by concern. Match folder casing and reuse the `.constants.ts`, `.schemas.ts`, `.store.ts`, `.types.ts`, `.utils.ts`, and `.test.ts` suffixes to stay consistent.
+- Environment-bound configuration sits in `env.client.ts` and `env.server.ts`; extend these when new runtime variables are introduced.
+
+## Naming Conventions
+- `app/`: all files and folders in kebab-case (including route groups in parentheses)
+- `components/`: folders in camelCase, files in PascalCase; each component gets its own folder
+- All other folders and files: camelCase; reserve PascalCase for exported classes or React components
+- One folder per feature/component (even single-file components)
+- Co-locate test, schema, constant, store, and type helpers with their feature modules using the suffixes (`.test.ts`, `.schemas.ts`, `.constants.ts`, `.store.ts`, `.types.ts`, `.utils.ts`)
+- Related files use the same base name with different extensions
+- **Utils naming**: Do NOT append "Utils" to folder/file names in `utils/` (e.g., use `date/date.ts` not `dateUtils/dateUtils.ts`)
+- **Variable naming**: Do not use single-character names for variables, parameters, or callbacks (e.g., use `event` instead of `e`)
+- **Constants naming**: Constants must be camelCase, not UPPER_CASE
+
+## File Extensions
+
+| Extension                | Purpose                             |
+|--------------------------|-------------------------------------|
+| `.ts{x}`                 | Main code (component, logic, etc.)  |
+| `.test.ts`               | Tests                               |
+| `.types.ts`              | TypeScript types                    |
+| `.utils.ts{x}`           | Helper functions                    |
+| `.utils.test.ts`         | Tests for utility functions         |
+| `.schemas.ts`            | Zod or Valibot schemas (forms, API) |
+| `.schemas.test.ts`       | Tests for schemas                   |
+| `.store.ts`              | Zustand or MobX stores              |
+| `.store.test.ts`         | Tests for stores                    |
+| `.constants.ts{x}`       | Static objects & constants          |
+
+**Note on `.ts` vs `.tsx`**: Use `.tsx` when the file contains JSX code (React components, JSX elements in functions, etc.). Use `.ts` when the file contains only TypeScript code without JSX. This applies to all file types including `.constants.ts{x}`, `.utils.ts{x}`, etc.
+
+## Folder Patterns
+
+### app/ — Next.js page routes & layouts
+- Kebab-case for route segments, including route groups in parentheses.
+- Place API route handlers under `app/api/.../route.ts`.
+- Keep `layout.tsx` for shared wrappers per route group.
+- Use server components by default; add `'use client'` only when necessary.
+
+Example route and associated page component:
+
+```tsx
+// src/app/example/page.tsx
+import type { Metadata } from 'next';
+import { ExamplePage } from '@/components/pages/examplePage/ExamplePage';
+
+export const metadata: Metadata = {
+  title: 'Component Change Analysis Tool',
+};
+
+export default async function ExampleRoute() {
+  return <ExamplePage />;
+}
+```
+
+```tsx
+// src/components/pages/examplePage/ExamplePage.tsx
+interface Props {};
+
+export function ExamplePage({}: Props) {
+  return <div>Example Page</div>;
+}
+```
+
+### components/
+- Folders in camelCase; files in PascalCase. Each component has its own folder.
+- Co-locate constants, schemas, stores, types, and utils with the component.
+
+#### components/pages/ — Page-level components
+- Orchestrate major views; minimal logic; compose view components.
+- Use a dedicated Zustand store per page (see Store Pattern below).
+- Follow the “Page Component Patterns” example in this document.
+
+#### components/shared/ — Shared components for pages
+- Reusable building blocks across pages.
+- Avoid page-specific state; accept data via props.
+- Keep styles and helpers co-located.
+
+#### components/ui/ — Shadcn & reusable UI components
+- Low-level, presentation-focused primitives.
+- No app-specific state; provide exhaustive props and stories when possible.
+- Keep side effects out; prefer pure, controlled components.
+
+### hooks/ — Custom React hooks
+- One hook per folder, named `useThing/` with `useThing.ts` and optional `useThing.types.ts` and tests.
+- Encapsulate reusable logic; avoid direct UI imports.
+- Keep inputs/outputs typed; prefer stable return shapes.
+
+### lib/ — 3rd party package-related files
+- Adapters and wrappers for third-party libraries.
+- Centralize configuration and environment-specific setup.
+- Keep code framework-agnostic when possible.
+  - Note: If your project uses `libs/`, apply the same patterns.
+
+### services/ — API data fetching logic
+- Organize by provider/platform, then by service (e.g., `hyperion/cca`).
+- Provide both raw async functions and React Query hooks.
+- Validate requests/responses with Zod/Valibot schemas.
+- See “Service Best Practices” below for full patterns and examples.
+
+### styles/ — Fonts & Tailwind CSS
+- Keep global styles in `global.css`; prefer component-scoped styles for specifics.
+- Organize tokens/utilities clearly; keep overrides minimal.
+- Co-locate unique styles with their components when appropriate.
+
+### utils/ — Reusable functions shared across the app
+- Files within `utils/` will never have the `.utils.ts` extension.
+- Keep functions pure and side-effect free where possible.
+- Always add tests for utility functions.
+
+## Testing Patterns
+
+### Preferred Pattern: `test.each` with Array of Objects
+
+The preferred way to write tests is using `test.each` with an array of objects. This pattern provides clear, readable test cases and makes it easy to add new test scenarios.
+
+**Structure:**
+- Each test case is an object with a `description` field and test data
+- Use template strings in the test name to interpolate the description (e.g., `'should handle $description'`)
+- Destructure test data in the test function
+
+**Example:**
+
+```typescript
+// utils/user/user.test.ts
+import {describe, expect, test} from 'vitest';
+import {buildUserFullName, buildUserInitials} from './user';
+
+describe('buildUserFullName', () => {
+  test.each([
+    {
+      description: 'full name with all components',
+      input: 'Smith, John David',
+      expected: {lastName: 'Smith', firstName: 'John', middleName: 'David'},
+    },
+    {
+      description: 'name without middle name',
+      input: 'Smith, John',
+      expected: {lastName: 'Smith', firstName: 'John', middleName: undefined},
+    },
+    {
+      description: 'empty string',
+      input: '',
+      expected: {lastName: '', firstName: ''},
+    },
+  ])('should handle $description', ({input, expected}) => {
+    const result = buildUserFullName(input);
+    expect(result).toEqual(expected);
+  });
+});
+```
+
+**Key patterns:**
+- Use `description` field to clearly describe what each test case covers
+- Group related test cases in the same `test.each` block
+- Use descriptive property names for test data (`input`, `expected`, etc.)
+- Use template string interpolation (`$description`) for readable test names
+- Destructure test data in the test function for clean access
+
+### Alternative Patterns
+
+While `test.each` with objects is preferred, other patterns are acceptable when needed:
+
+- **Simple `test.each` with arrays**: Use when test cases are simple and don't need descriptive labels
+- **Individual `test` blocks**: Use for complex setup/teardown or when tests need significantly different structure
+- **Nested `describe` blocks**: Use to group related test suites or when organizing by feature area
+
+## Examples
+
+### `components/` Folder Structure (camelCase folders, PascalCase files)
+
+```text
+components/
+└── someComponent/
+    ├── SomeComponent.tsx
+    ├── SomeComponent.constants.ts
+    ├── SomeComponent.schemas.ts
+    ├── SomeComponent.store.ts
+    ├── SomeComponent.types.ts
+    ├── SomeComponent.utils.ts
+    └── SomeComponent.utils.test.ts
+```
+
+### `components/pages/` Folder Structure - Page Component Patterns
+
+Page components follow a specific organizational pattern with stores, views, and nested subcomponents:
+
+```text
+components/pages/
+└── pageName/
+    ├── PageName.tsx                    # Main page component (client component)
+    ├── PageName.store.ts               # Zustand store implementation
+    ├── PageName.store.types.ts         # Store type definitions
+    ├── viewName/                       # View container components
+    │   ├── ViewName.tsx
+    │   └── subComponent/               # Nested subcomponents
+    │       ├── SubComponent.tsx
+    │       ├── SubComponent.constants.ts
+    │       └── subSubComponent/
+    │           └── SubSubComponent.tsx
+    └── anotherView/
+        └── AnotherView.tsx
+```
+
+**Key patterns:**
+- **Page component**: Simple orchestrator that conditionally renders views based on store state
+- **Store pattern**: Separate `.store.ts` (implementation) and `.store.types.ts` (types) files
+- **View-based organization**: Major UI sections organized as separate view components
+- **Nested subcomponents**: Subcomponents organized in their own folders, can be deeply nested
+- **Co-located files**: Constants, utils, and types stay with their related components
+- **Client components**: Use `'use client'` directive when component uses hooks or interactivity
+
+**Child-Parent Relationship Rules:**
+- **Subcomponents belong to the component that uses them**: If `ComponentA` imports and uses `ComponentB`, then `ComponentB` should be nested as a child folder under `ComponentA`
+- **Sibling components**: If two components are used together by a parent but don't directly import each other, they can be siblings at the same level
+- **Page-level organization**: Related page components (e.g., list page and detail page) can be siblings under a common parent folder, but subcomponents used by a specific page should be nested under that page's folder
+
+**Example:**
+```text
+components/pages/
+└── announcementsPage/
+    ├── AnnouncementsPage.tsx           # List page
+    ├── AnnouncementsPage.constants.tsx
+    └── announcementPage/              # Detail/create page (sibling to list page)
+        ├── AnnouncementPage.tsx
+        └── announcementForm/           # Subcomponent used by AnnouncementPage
+            ├── AnnouncementForm.tsx
+            └── AnnouncementForm.constants.ts
+```
+
+In this example:
+- `AnnouncementPage` and `AnnouncementsPage` are sibling page components
+- `AnnouncementForm` is a child of `AnnouncementPage` because `AnnouncementPage` imports and uses it
+- `AnnouncementForm` should NOT be a sibling of `AnnouncementPage` or `AnnouncementsPage`
+
+#### Store Pattern
+
+Page components use Zustand stores with the following structure:
+
+```typescript
+// PageName.store.types.ts
+export interface PageNameStore {
+  // State properties
+  someState: string;
+  anotherState: boolean;
+  
+  // Action methods
+  setSomeState: (value: string) => void;
+  updateAnotherState: () => void;
+}
+```
+
+```typescript
+// PageName.store.ts
+import { create } from 'zustand';
+import { immer } from 'zustand/middleware/immer';
+import type { PageNameStore } from './PageName.store.types';
+
+export const usePageNameStore = create<PageNameStore>()(
+  immer((set, get) => ({
+    // Initial state
+    someState: '',
+    anotherState: false,
+    
+    // Actions
+    setSomeState: (value: string) => {
+      set((state) => {
+        state.someState = value;
+      });
+    },
+      
+    updateAnotherState: () => {
+      set((state) => {
+        state.anotherState = !state.anotherState;
+      });
+    },
+  })),
+);
+```
+
+**Store patterns:**
+- Use Zustand with `immer` middleware for immutable updates
+- Separate types into `.store.types.ts` file
+- Use `interface` for store type definitions
+- Actions are methods on the store interface
+- Use `set` callback with immer for state updates
+- Can use `get()` to access current state within actions
+
+#### Component Organization Patterns
+
+**Page Component (Orchestrator):**
+```typescript
+// PageName.tsx
+'use client';
+import { usePageNameStore } from './PageName.store';
+import { ViewName } from './viewName/ViewName';
+import { AnotherView } from './anotherView/AnotherView';
+
+export function PageName() {
+  const someCondition = usePageNameStore((store) => store.someCondition);
+  
+  return someCondition ? <ViewName /> : <AnotherView />;
+}
+```
+
+**View Components:**
+- Container components that group related UI sections
+- Can import and compose subcomponents
+- May use store state but typically delegate to subcomponents
+
+**Subcomponent Patterns:**
+- Each subcomponent gets its own folder
+- Constants and utils co-located with the component
+- Use `Props` interface for component props (always `interface`, never `type`)
+- **`Props` interface must always be defined in the component file** - it is the only type that belongs there
+- **`Props` interface must NOT be exported** (define without the `export` keyword)
+- Exactly one React component per file
+
+```typescript
+// SubComponent.tsx
+'use client'; // If using hooks
+import { SubComponentConstants } from './SubComponent.constants';
+import { helperFunction } from './SubComponent.utils';
+import type { SomeType } from './SubComponent.types';
+
+// Props is the only type that belongs in the component file (not exported)
+interface Props {
+  item: SomeType;
+  isLastItem: boolean;
+}
+
+// Components must export a function
+export function SubComponent({ item, isLastItem }: Props) {
+  // Component implementation
+}
+
+// If the component is a MobX observer, export a const instead:
+// export const SubComponent = observer((props: Props) => { /* ... */ });
+```
+
+#### Component Code Organization: Bad vs Good Examples
+
+Keep React components clean and focused on rendering logic. Abstract constants, types, and helper functions to supporting files to reduce mental overload.
+
+**Note:** The `Props` interface should always be defined in the component file itself (without `export`). It is the only type that belongs in the component file. All other types should be moved to `.types.ts`.
+
+**❌ Bad Example: Everything in One File**
+
+```typescript
+// UserCard.tsx - DON'T DO THIS
+'use client';
+import { useState } from 'react';
+
+// Types mixed with component - Props should stay, but other types should be extracted
+type UserStatus = 'active' | 'inactive' | 'pending';
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  status: UserStatus;
+  lastLogin: Date;
+}
+interface Props {
+  user: User;
+  onStatusChange: (status: UserStatus) => void;
+}
+
+// Constants mixed with component
+const STATUS_COLORS = {
+  active: 'bg-green-500',
+  inactive: 'bg-gray-500',
+  pending: 'bg-yellow-500',
+} as const;
+
+const MAX_NAME_LENGTH = 30;
+const DATE_FORMAT_OPTIONS: Intl.DateTimeFormatOptions = {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+};
+
+// Helper functions mixed with component
+function formatUserName(name: string): string {
+  if (name.length > MAX_NAME_LENGTH) {
+    return `${name.substring(0, MAX_NAME_LENGTH)}...`;
+  }
+  return name;
+}
+
+function formatLastLogin(date: Date): string {
+  return new Intl.DateTimeFormat('en-US', DATE_FORMAT_OPTIONS).format(date);
+}
+
+function getStatusColor(status: UserStatus): string {
+  return STATUS_COLORS[status];
+}
+
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+// Component with too much logic
+export function UserCard({ user, onStatusChange }: Props) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
+  const displayName = formatUserName(user.name);
+  const formattedDate = formatLastLogin(user.lastLogin);
+  const statusColor = getStatusColor(user.status);
+  const emailValid = isValidEmail(user.email);
+  
+  return (
+    <div className="border rounded-lg p-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-bold">{displayName}</h3>
+          <p className="text-sm text-gray-600">{user.email}</p>
+        </div>
+        <span className={`px-2 py-1 rounded ${statusColor}`}>
+          {user.status}
+        </span>
+      </div>
+      {isExpanded && (
+        <div className="mt-4">
+          <p>Last login: {formattedDate}</p>
+          {!emailValid && <p className="text-red-500">Invalid email</p>}
+        </div>
+      )}
+      <button onClick={() => setIsExpanded(!isExpanded)}>
+        {isExpanded ? 'Collapse' : 'Expand'}
+      </button>
+    </div>
+  );
+}
+```
+
+**✅ Good Example: Separated Concerns**
+
+```typescript
+// UserCard.tsx - Clean component focused on rendering
+'use client';
+import { useState } from 'react';
+import { formatUserName, formatLastLogin, getStatusColor, isValidEmail } from './UserCard.utils';
+import type { User, UserStatus } from './UserCard.types';
+
+// Props is the only type that belongs in the component file (not exported)
+interface Props {
+  user: User;
+  onStatusChange: (status: UserStatus) => void;
+}
+
+export function UserCard({ user, onStatusChange }: Props) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
+  const displayName = formatUserName(user.name);
+  const formattedDate = formatLastLogin(user.lastLogin);
+  const statusColor = getStatusColor(user.status);
+  const emailValid = isValidEmail(user.email);
+  
+  return (
+    <div className="border rounded-lg p-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-bold">{displayName}</h3>
+          <p className="text-sm text-gray-600">{user.email}</p>
+        </div>
+        <span className={`px-2 py-1 rounded ${statusColor}`}>
+          {user.status}
+        </span>
+      </div>
+      {isExpanded && (
+        <div className="mt-4">
+          <p>Last login: {formattedDate}</p>
+          {!emailValid && <p className="text-red-500">Invalid email</p>}
+        </div>
+      )}
+      <button onClick={() => setIsExpanded(!isExpanded)}>
+        {isExpanded ? 'Collapse' : 'Expand'}
+      </button>
+    </div>
+  );
+}
+```
+
+```typescript
+// UserCard.types.ts - All types except Props (which belongs in the component)
+export type UserStatus = 'active' | 'inactive' | 'pending';
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  status: UserStatus;
+  lastLogin: Date;
+}
+```
+
+```typescript
+// UserCard.constants.ts - All constants in one place
+export const STATUS_COLORS = {
+  active: 'bg-green-500',
+  inactive: 'bg-gray-500',
+  pending: 'bg-yellow-500',
+} as const;
+
+export const MAX_NAME_LENGTH = 30;
+
+export const DATE_FORMAT_OPTIONS: Intl.DateTimeFormatOptions = {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+};
+```
+
+```typescript
+// UserCard.utils.ts - All helper functions in one place
+import { MAX_NAME_LENGTH, STATUS_COLORS, DATE_FORMAT_OPTIONS } from './UserCard.constants';
+import type { UserStatus } from './UserCard.types';
+
+export function formatUserName(name: string): string {
+  if (name.length > MAX_NAME_LENGTH) {
+    return `${name.substring(0, MAX_NAME_LENGTH)}...`;
+  }
+  return name;
+}
+
+export function formatLastLogin(date: Date): string {
+  return new Intl.DateTimeFormat('en-US', DATE_FORMAT_OPTIONS).format(date);
+}
+
+export function getStatusColor(status: UserStatus): string {
+  return STATUS_COLORS[status];
+}
+
+export function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+```
+
+**Key Benefits:**
+- **Reduced mental overload**: Component file focuses only on rendering logic
+- **Better testability**: Helper functions can be tested independently
+- **Improved reusability**: Constants and utils can be shared across components
+- **Easier maintenance**: Changes to types, constants, or logic are isolated
+- **Clearer organization**: Each file has a single, clear purpose
+
+**Important Rules for Constants and Utils:**
+- **All constants** (including string literals, configuration objects, magic numbers, etc.) must be extracted to `.constants.ts` files
+- **All helper functions** (including pure functions, data transformations, localStorage operations, etc.) must be extracted to `.utils.ts` files
+- **Constants naming**: Use camelCase, never UPPER_CASE (e.g., `dismissedAnnouncementsKey` not `DISMISSED_ANNOUNCEMENTS_KEY`)
+- **Utils can import from constants**: Utils files can import constants from the corresponding `.constants.ts` file
+- **Component files should only contain**: JSX, Props interface, and React hooks/state management
+
+### `utils/` Folder Structure (camelCase folder)
+
+```text
+utils/
+└── date/
+    ├── date.ts         # Main utility functions for date handling
+    ├── date.test.ts    # Tests for date utilities
+    └── date.types.ts   # TypeScript types for date utilities
+```
+
+1. **Create util folder**: `utils/{utilName}/`
+    - ✅ Correct: `utils/date/date.ts`
+    - ❌ Wrong: `utils/dateUtils/dateUtils.ts`
+2. **Add files**:
+    - `{utilName}.ts` - Main utility functions
+    - `{utilName}.types.ts` - Types (if needed)
+    - `{utilName}.test.ts` - Tests (always!)
+3. **Keep pure**: No side effects, no React dependencies
+4. **Always test**: Every util needs test coverage
+
+
+
+### `services/` Folder Structure (camelCase folders and files)
+
+Services are organized by provider/platform, then by specific service. Each service consists of three core files:
+
+```text
+services/
+└── providerName/
+    └── serviceName/
+        ├── serviceName.ts              # Main service functions
+        ├── serviceName.schemas.ts      # Zod/Valibot schemas for validation
+        └── serviceName.constants.ts    # Constants (query keys, etc.)
+```
+
+## Service Best Practices
+
+When creating a new service, follow these patterns:
+
+### Directory Organization
+
+1. **Organize by provider/platform**: Group services by the external API or platform they interact with (e.g., `hyperion`, `mlPlatform`)
+2. **Create service subdirectories**: Each specific service gets its own folder (e.g., `cca`, `llm`)
+3. **Use camelCase**: All folder and file names use camelCase
+
+### File Structure
+
+Each service should have three files:
+
+1. **`{serviceName}.ts`**: Main service functions
+2. **`{serviceName}.schemas.ts`**: Zod/Valibot schemas for request/response validation
+3. **`{serviceName}.constants.ts`**: Constants like React Query keys
+
+### Service Function Patterns
+
+```typescript
+// services/providerName/serviceName/serviceName.ts
+import { useMutation } from '@tanstack/react-query';
+import { http } from '@/utils/httpClient/httpClient';
+import { api } from '@/utils/httpClient/httpClient.constants';
+import { serviceFunctionKey } from './serviceName.constants';
+import { ServiceInputRequestSchema, ServiceOutputResponseSchema } from './serviceName.schemas';
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ * 📝 POST /api/v1/endpoint
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+export async function serviceFunction(data: ServiceInputRequestSchema) {
+  const url = api.providerName.v1.endpoint;
+
+  return http.post<ServiceOutputResponseSchema, ServiceInputRequestSchema>(url, {
+    body: data,
+    responseSchema: ServiceOutputResponseSchema,
+    requestSchema: ServiceInputRequestSchema,
+  });
+}
+
+export function useServiceFunction() {
+  return useMutation({
+    mutationKey: [serviceFunctionKey],
+    mutationFn: serviceFunction,
+  });
+}
+```
+
+**Key patterns:**
+- Include HTTP method and endpoint path in comments above each function
+- Use async functions for API calls
+- Use the `http` client from `@/utils/httpClient/httpClient`
+- Always provide `requestSchema` and `responseSchema` for validation
+- Export React Query hooks (`useMutation` or `useQuery`) alongside async functions
+- Query keys come from the constants file
+
+### Schema Patterns
+
+```typescript
+// services/providerName/serviceName/serviceName.schemas.ts
+import * as v from 'valibot';
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ * 📝 POST /api/v1/endpoint
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+export const ServiceInputRequestSchema = v.object({
+  prompt: v.pipe(v.string(), v.minLength(1, 'Prompt is required.')),
+  session_id: v.pipe(v.string(), v.uuid()),
+  user_email: v.pipe(v.string(), v.email()),
+});
+export type ServiceInputRequestSchema = v.InferInput<typeof ServiceInputRequestSchema>;
+
+export const ServiceOutputResponseSchema = v.object({
+  status: v.string(),
+  data: v.object({
+    result: v.string(),
+  }),
+});
+export type ServiceOutputResponseSchema = v.InferOutput<typeof ServiceOutputResponseSchema>;
+```
+
+**Key patterns:**
+- Use Zod/Valibot for schema validation
+- Export both the schema and the inferred TypeScript types
+- Request schemas use `v.InferInput<typeof Schema>`
+- Response schemas use `v.InferOutput<typeof Schema>`
+- Include HTTP method and endpoint in comments
+- Use descriptive validation messages
+
+### Constants Patterns
+
+```typescript
+// services/providerName/serviceName/serviceName.constants.ts
+export const serviceFunctionKey = 'serviceFunctionKey';
+```
+
+**Key patterns:**
+- Export string constants for React Query keys
+- Use descriptive names that match the function name
+- Keep constants simple and focused
+
+### API URL Configuration
+
+API URLs are defined in `utils/httpClient/httpClient.constants.ts`:
+
+```typescript
+export const api = {
+  providerName: {
+    serviceName: {
+      v1: {
+        endpoint: 'https://api.example.com/api/v1/endpoint',
+      },
+    },
+  },
+} as const;
+```
+
+**Key patterns:**
+- Organize URLs by provider/platform → service → version
+- Use `as const` for type safety
+- Keep URLs centralized in the constants file
+
+## TypeScript: Interface vs Type
+- Default: use `interface` for object shapes; use `type` for unions and advanced type operations.
+
+## Common Mistakes to Avoid
+
+1. ❌ Using `type` for object shapes → ✅ Use `interface`
+2. ❌ Defining types in component files → ✅ Move to `.types.ts` (except Props)
+3. ❌ Exporting `Props` interface → ✅ Define without `export` keyword
+4. ❌ In `utils/`, using `.utils.ts` or "Utils" suffix → ✅ Use `utils/{name}/{name}.ts` (e.g., `utils/date/date.ts`)
+5. ❌ kebab-case for component files → ✅ Use PascalCase
+6. ❌ camelCase for `app/` routes → ✅ Use kebab-case
+7. ❌ Page logic in `app/page.tsx` → ✅ Import from `components/pages/`
+8. ❌ Constants/utils in component files → ✅ Extract to `.constants.ts` and `.utils.ts`
+9. ❌ Missing schemas for API calls → ✅ Always validate with Valibot/Zod
+10. ❌ `'use client'` everywhere → ✅ Use server components by default
+11. ❌ Single-character variable names → ✅ Use descriptive names (e.g., `event` not `e`)
+12. ❌ UPPER_CASE constants → ✅ Use camelCase for constants
+13. ❌ Multiple components per file → ✅ Exactly one component per file
+14. ❌ Constants defined inline in component or utils files → ✅ All constants must be in `.constants.ts` files
+15. ❌ Helper functions defined in component files → ✅ All helper functions must be in `.utils.ts` files
+
+## Context-Specific Patterns
+
+### When Creating a New Page
+
+1. **Create the route** in `app/{route-name}/page.tsx` (kebab-case)
+2. **Create page component** in `components/pages/{pageName}/PageName.tsx` (camelCase folder, PascalCase file)
+3. **Add page store** if needed: `PageName.store.ts` and `PageName.store.types.ts`
+4. **Break into views** if page has 3+ distinct sections: `viewName/ViewName.tsx`
+5. **Keep route minimal**: just import page component and export metadata
+
+**Example:**
+```typescript
+// app/user-profile/page.tsx
+import type { Metadata } from 'next';
+import { UserProfilePage } from '@/components/pages/userProfilePage/UserProfilePage';
+
+export const metadata: Metadata = { title: 'User Profile' };
+export default async function UserProfileRoute() {
+  return <UserProfilePage />;
+}
+```
+
+### When Adding API Integration
+
+1. **Create service folder**: `services/{provider}/{service}/`
+2. **Add three core files**:
+   - `{service}.ts` - async functions and React Query hooks
+   - `{service}.schemas.ts` - Valibot/Zod validation schemas
+   - `{service}.constants.ts` - React Query keys
+3. **Add URL** to `utils/httpClient/httpClient.constants.ts`
+4. **Export both**: async function AND React Query hook (useMutation/useQuery)
+
+**Example structure:**
+```text
+services/
+└── hyperion/
+    └── users/
+        ├── users.ts
+        ├── users.schemas.ts
+        └── users.constants.ts
+```
+
+### When Creating a Reusable Component
+
+1. **Choose location**:
+   - `components/ui/` - Pure, presentation-only (buttons, inputs)
+   - `components/shared/` - Reusable across pages with some logic
+   - `components/pages/{page}/` - Page-specific components
+2. **Create folder structure**:
+   ```text
+   componentName/
+   ├── ComponentName.tsx       # Component + Props interface only
+   ├── ComponentName.types.ts  # All other types
+   ├── ComponentName.constants.ts
+   └── ComponentName.utils.ts
+   ```
+3. **Keep component clean**: Only JSX and Props interface
+4. **Extract everything else**: types, constants, helpers to separate files
+
+### When Adding a Custom Hook
+
+1. **Create hook folder**: `hooks/use{HookName}/`
+2. **Add files**:
+   - `use{HookName}.ts` - Hook implementation
+   - `use{HookName}.types.ts` - Hook types (if complex)
+   - `use{HookName}.test.ts` - Tests
+3. **Keep stable**: Return consistent shape, avoid breaking changes
+4. **Type inputs/outputs**: Use TypeScript for all parameters and returns

@@ -45,20 +45,35 @@ export const listMyEmailsAndStatuses = query({
       .query("emails")
       .withIndex("userId", (q) => q.eq("userId", userId))
       .order("desc")
-      .take(10);
+      .take(50);
 
     const emailAndStatuses = await Promise.all(
       emails.map(async (email) => {
-        const emailData = await resend.get(ctx, email.emailId);
+        let resendStatus = email.status;
+        let opened = email.opened;
+        let complained = false;
+        let errorMessage = email.errorMessage;
+
+        if (email.emailId) {
+          const emailData = await resend.get(ctx, email.emailId);
+          resendStatus = emailData?.status ?? email.status;
+          opened = emailData?.opened ?? email.opened;
+          complained = emailData?.complained ?? false;
+          errorMessage = emailData?.errorMessage ?? email.errorMessage;
+        }
+
         return {
+          _id: email._id,
           emailId: email.emailId,
-          sentAt: email._creationTime,
-          to: emailData?.to ?? "<Deleted>",
-          subject: emailData?.subject ?? "<Deleted>",
-          status: emailData?.status,
-          errorMessage: emailData?.errorMessage,
-          opened: emailData?.opened,
-          complained: emailData?.complained,
+          campaignId: email.campaignId,
+          recipientEmail: email.recipientEmail,
+          subject: email.subject,
+          status: email.status,
+          resendStatus,
+          opened,
+          complained,
+          errorMessage,
+          sentAt: email.createdAt,
         };
       }),
     );
@@ -74,6 +89,36 @@ export const handleEmailEvent = internalMutation({
   },
   handler: async (ctx, args) => {
     console.log("Email event:", args.id, args.event);
-    // Probably do something with the event if you care about deliverability!
+    
+    // Find email record and update status
+    const email = await ctx.db
+      .query("emails")
+      .filter((q) => q.eq(q.field("emailId"), args.id))
+      .first();
+
+    if (email) {
+      let status: "queued" | "sending" | "sent" | "delivered" | "bounced" | "failed" | "complained" = email.status;
+      let opened = email.opened;
+      let complained = false;
+
+      if (args.event.type === "email.sent") {
+        status = "sent";
+      } else if (args.event.type === "email.delivered") {
+        status = "delivered";
+      } else if (args.event.type === "email.bounced") {
+        status = "bounced";
+      } else if (args.event.type === "email.opened") {
+        opened = true;
+      } else if (args.event.type === "email.complained") {
+        complained = true;
+        status = "complained";
+      }
+
+      await ctx.db.patch(email._id, {
+        status,
+        opened,
+        complained,
+      });
+    }
   },
 });
