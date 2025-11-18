@@ -20,9 +20,7 @@ import {
 } from '@heroui/react';
 import { Link } from 'react-router-dom';
 
-interface Props {}
-
-export function ListsPage({}: Props) {
+export function ListsPage() {
   const lists = useQuery((api as any).lists.listLists);
   const createList = useMutation((api as any).lists.createList);
   const deleteList = useMutation((api as any).lists.deleteList);
@@ -140,7 +138,9 @@ export function ListsPage({}: Props) {
                     size="sm"
                     color="danger"
                     variant="light"
-                    onPress={() => handleDelete(list._id)}
+                    onPress={() => {
+                      void handleDelete(list._id);
+                    }}
                   >
                     Delete
                   </Button>
@@ -175,7 +175,9 @@ export function ListsPage({}: Props) {
             </Button>
             <Button
               color="primary"
-              onPress={handleCreateList}
+              onPress={() => {
+                void handleCreateList();
+              }}
               isLoading={isSubmitting}
             >
               Create List

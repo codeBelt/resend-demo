@@ -12,9 +12,7 @@ const navItems = [
   { path: '/analytics', label: 'Analytics', icon: '📈' },
 ];
 
-interface Props {}
-
-export function Navigation({}: Props) {
+export function Navigation() {
   const location = useLocation();
   const { signOut } = useAuthActions();
 

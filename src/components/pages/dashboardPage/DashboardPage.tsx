@@ -6,9 +6,7 @@ import { Card, CardBody, CardHeader } from '@heroui/react';
 import { Link } from 'react-router-dom';
 import { Button } from '@heroui/react';
 
-interface Props {}
-
-export function DashboardPage({}: Props) {
+export function DashboardPage() {
   const stats = useQuery((api as any).campaigns.getDashboardStats);
   const recentEmails = useQuery(api.emails.listMyEmailsAndStatuses);
 

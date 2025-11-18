@@ -4,15 +4,13 @@ import { useState } from 'react';
 import { useAuthActions } from '@convex-dev/auth/react';
 import { Card, CardBody, CardHeader, Input, Button } from '@heroui/react';
 
-interface Props {}
-
-export function SignInForm({}: Props) {
+export function SignInForm() {
   const { signIn } = useAuthActions();
   const [flow, setFlow] = useState<'signIn' | 'signUp'>('signIn');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
     setError(null);
@@ -20,13 +18,13 @@ export function SignInForm({}: Props) {
     const formData = new FormData(event.currentTarget);
     formData.set('flow', flow);
 
-    try {
-      await signIn('password', formData);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setIsLoading(false);
-    }
+    void signIn('password', formData)
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   };
 
   return (

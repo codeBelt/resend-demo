@@ -23,9 +23,7 @@ import {
   TableCell,
 } from '@heroui/react';
 
-interface Props {}
-
-export function ListDetailPage({}: Props) {
+export function ListDetailPage() {
   const { listId } = useParams<{ listId: string }>();
   const lists = useQuery((api as any).lists.listLists);
   const listContacts = useQuery(
@@ -174,7 +172,9 @@ export function ListDetailPage({}: Props) {
                         size="sm"
                         color="danger"
                         variant="light"
-                        onPress={() => handleRemoveContact(contact._id)}
+                        onPress={() => {
+                          void handleRemoveContact(contact._id);
+                        }}
                       >
                         Remove
                       </Button>
@@ -231,7 +231,9 @@ export function ListDetailPage({}: Props) {
             </Button>
             <Button
               color="primary"
-              onPress={handleAddContact}
+              onPress={() => {
+                void handleAddContact();
+              }}
               isLoading={isSubmitting}
               isDisabled={!selectedContactId || availableContacts.length === 0}
             >

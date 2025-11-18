@@ -22,9 +22,7 @@ import {
   TableCell,
 } from '@heroui/react';
 
-interface Props {}
-
-export function UsersPage({}: Props) {
+export function UsersPage() {
   const contacts = useQuery((api as any).contacts.listContacts);
   const createContact = useMutation((api as any).contacts.createContact);
   const deleteContact = useMutation((api as any).contacts.deleteContact);
@@ -136,7 +134,9 @@ export function UsersPage({}: Props) {
                         size="sm"
                         color="danger"
                         variant="light"
-                        onPress={() => handleDelete(contact._id)}
+                        onPress={() => {
+                          void handleDelete(contact._id);
+                        }}
                       >
                         Delete
                       </Button>
@@ -174,7 +174,9 @@ export function UsersPage({}: Props) {
             </Button>
             <Button
               color="primary"
-              onPress={handleCreateContact}
+              onPress={() => {
+                void handleCreateContact();
+              }}
               isLoading={isSubmitting}
             >
               Add Contact

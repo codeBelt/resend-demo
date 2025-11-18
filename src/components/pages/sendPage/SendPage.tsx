@@ -14,9 +14,7 @@ import {
   SelectItem,
 } from '@heroui/react';
 
-interface Props {}
-
-export function SendPage({}: Props) {
+export function SendPage() {
   const lists = useQuery((api as any).lists.listLists);
   const createCampaign = useMutation((api as any).campaigns.createCampaign);
   const sendCampaign = useMutation((api as any).campaigns.sendCampaign);
@@ -203,7 +201,9 @@ export function SendPage({}: Props) {
           <div className="flex gap-4">
             <Button
               color="primary"
-              onPress={handleCreateCampaign}
+              onPress={() => {
+                void handleCreateCampaign();
+              }}
               isLoading={isSubmitting}
               isDisabled={!campaignName || !subject || !body}
             >
@@ -213,7 +213,9 @@ export function SendPage({}: Props) {
               <Button
                 color="primary"
                 variant="solid"
-                onPress={handleSendCampaign}
+                onPress={() => {
+                  void handleSendCampaign();
+                }}
                 isLoading={isSubmitting}
                 className="bg-green-600 hover:bg-green-700 text-white"
               >

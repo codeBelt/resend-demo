@@ -23,9 +23,7 @@ import {
   Line,
 } from 'recharts';
 
-interface Props {}
-
-export function AnalyticsPage({}: Props) {
+export function AnalyticsPage() {
   const stats = useQuery((api as any).campaigns.getDashboardStats);
   const emails = useQuery(api.emails.listMyEmailsAndStatuses);
 
