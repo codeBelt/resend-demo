@@ -9,7 +9,6 @@ import {
   CardBody,
   CardHeader,
   Button,
-  Input,
   Modal,
   ModalContent,
   ModalHeader,
@@ -28,20 +27,20 @@ interface Props {}
 
 export function ListDetailPage({}: Props) {
   const { listId } = useParams<{ listId: string }>();
-  const lists = useQuery(api.lists.listLists);
+  const lists = useQuery((api as any).lists.listLists);
   const listContacts = useQuery(
-    api.lists.getListContacts,
+    (api as any).lists.getListContacts,
     listId ? { listId: listId as any } : 'skip',
   );
-  const allContacts = useQuery(api.contacts.listContacts);
-  const addContactToList = useMutation(api.lists.addContactToList);
-  const removeContactFromList = useMutation(api.lists.removeContactFromList);
+  const allContacts = useQuery((api as any).contacts.listContacts);
+  const addContactToList = useMutation((api as any).lists.addContactToList);
+  const removeContactFromList = useMutation((api as any).lists.removeContactFromList);
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   const [selectedContactId, setSelectedContactId] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const currentList = lists?.find((list) => list._id === listId);
+  const currentList = lists?.find((list: any) => list._id === listId);
 
   const handleAddContact = async () => {
     if (!selectedContactId || !listId) {
@@ -106,7 +105,7 @@ export function ListDetailPage({}: Props) {
 
   // Get contacts not already in the list
   const availableContacts = allContacts.filter(
-    (contact) => !listContacts.some((lc) => lc._id === contact._id),
+    (contact: any) => !listContacts.some((lc: any) => lc._id === contact._id),
   );
 
   return (
@@ -155,7 +154,7 @@ export function ListDetailPage({}: Props) {
                 <TableColumn>ACTIONS</TableColumn>
               </TableHeader>
               <TableBody>
-                {listContacts.map((contact) => (
+                {listContacts.map((contact: any) => (
                   <TableRow key={contact._id}>
                     <TableCell>{contact.email}</TableCell>
                     <TableCell>{contact.name || '-'}</TableCell>
@@ -198,7 +197,7 @@ export function ListDetailPage({}: Props) {
               </p>
             ) : (
               <div className="space-y-2">
-                {availableContacts.map((contact) => (
+                {availableContacts.map((contact: any) => (
                   <label
                     key={contact._id}
                     className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${

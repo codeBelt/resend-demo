@@ -9,7 +9,7 @@ import { Button } from '@heroui/react';
 interface Props {}
 
 export function DashboardPage({}: Props) {
-  const stats = useQuery(api.campaigns.getDashboardStats);
+  const stats = useQuery((api as any).campaigns.getDashboardStats);
   const recentEmails = useQuery(api.emails.listMyEmailsAndStatuses);
 
   if (stats === undefined || recentEmails === undefined) {

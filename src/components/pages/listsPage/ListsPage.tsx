@@ -23,9 +23,9 @@ import { Link } from 'react-router-dom';
 interface Props {}
 
 export function ListsPage({}: Props) {
-  const lists = useQuery(api.lists.listLists);
-  const createList = useMutation(api.lists.createList);
-  const deleteList = useMutation(api.lists.deleteList);
+  const lists = useQuery((api as any).lists.listLists);
+  const createList = useMutation((api as any).lists.createList);
+  const deleteList = useMutation((api as any).lists.deleteList);
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   const [name, setName] = useState('');
@@ -105,7 +105,7 @@ export function ListsPage({}: Props) {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {lists.map((list) => (
+          {lists.map((list: any) => (
             <Card key={list._id} className="border border-slate-200 dark:border-slate-700">
               <CardHeader className="flex justify-between items-start">
                 <div className="flex-1">

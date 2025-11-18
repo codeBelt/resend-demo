@@ -31,13 +31,17 @@ export const sendEmail = mutation({
     await ctx.db.insert("emails", {
       userId,
       emailId,
+      recipientEmail: args.to,
+      subject: args.subject,
+      status: "queued",
+      createdAt: Date.now(),
     });
   },
 });
 
 export const listMyEmailsAndStatuses = query({
   args: {},
-  handler: async (ctx, args) => {
+  handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return [];
 
@@ -56,7 +60,15 @@ export const listMyEmailsAndStatuses = query({
 
         if (email.emailId) {
           const emailData = await resend.get(ctx, email.emailId);
-          resendStatus = emailData?.status ?? email.status;
+          const resendStatusValue = emailData?.status;
+          // Map Resend statuses to our schema statuses
+          if (resendStatusValue) {
+            if (resendStatusValue === "sent" || resendStatusValue === "delivered" || resendStatusValue === "bounced" || resendStatusValue === "failed") {
+              resendStatus = resendStatusValue;
+            } else {
+              resendStatus = email.status;
+            }
+          }
           opened = emailData?.opened ?? email.opened;
           complained = emailData?.complained ?? false;
           errorMessage = emailData?.errorMessage ?? email.errorMessage;
@@ -99,7 +111,6 @@ export const handleEmailEvent = internalMutation({
     if (email) {
       let status: "queued" | "sending" | "sent" | "delivered" | "bounced" | "failed" | "complained" = email.status;
       let opened = email.opened;
-      let complained = false;
 
       if (args.event.type === "email.sent") {
         status = "sent";
@@ -110,15 +121,21 @@ export const handleEmailEvent = internalMutation({
       } else if (args.event.type === "email.opened") {
         opened = true;
       } else if (args.event.type === "email.complained") {
-        complained = true;
         status = "complained";
       }
 
-      await ctx.db.patch(email._id, {
+      const updateData: {
+        status: typeof status;
+        opened?: boolean;
+      } = {
         status,
-        opened,
-        complained,
-      });
+      };
+      
+      if (opened !== undefined) {
+        updateData.opened = opened;
+      }
+      
+      await ctx.db.patch(email._id, updateData);
     }
   },
 });

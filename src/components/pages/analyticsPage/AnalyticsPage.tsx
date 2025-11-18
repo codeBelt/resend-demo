@@ -26,7 +26,7 @@ import {
 interface Props {}
 
 export function AnalyticsPage({}: Props) {
-  const stats = useQuery(api.campaigns.getDashboardStats);
+  const stats = useQuery((api as any).campaigns.getDashboardStats);
   const emails = useQuery(api.emails.listMyEmailsAndStatuses);
 
   if (stats === undefined || emails === undefined) {

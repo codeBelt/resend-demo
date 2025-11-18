@@ -17,9 +17,9 @@ import {
 interface Props {}
 
 export function SendPage({}: Props) {
-  const lists = useQuery(api.lists.listLists);
-  const createCampaign = useMutation(api.campaigns.createCampaign);
-  const sendCampaign = useMutation(api.campaigns.sendCampaign);
+  const lists = useQuery((api as any).lists.listLists);
+  const createCampaign = useMutation((api as any).campaigns.createCampaign);
+  const sendCampaign = useMutation((api as any).campaigns.sendCampaign);
 
   const [campaignName, setCampaignName] = useState('');
   const [subject, setSubject] = useState('');
@@ -165,8 +165,8 @@ export function SendPage({}: Props) {
                   setSelectedListId(selected || '');
                 }}
               >
-                {lists.map((list) => (
-                  <SelectItem key={list._id} value={list._id}>
+                {lists.map((list: any) => (
+                  <SelectItem key={list._id}>
                     {list.name} ({list.memberCount} members)
                   </SelectItem>
                 ))}

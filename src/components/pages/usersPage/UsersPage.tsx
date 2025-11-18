@@ -6,7 +6,6 @@ import { api } from '../../../../convex/_generated/api';
 import {
   Card,
   CardBody,
-  CardHeader,
   Button,
   Input,
   Modal,
@@ -26,9 +25,9 @@ import {
 interface Props {}
 
 export function UsersPage({}: Props) {
-  const contacts = useQuery(api.contacts.listContacts);
-  const createContact = useMutation(api.contacts.createContact);
-  const deleteContact = useMutation(api.contacts.deleteContact);
+  const contacts = useQuery((api as any).contacts.listContacts);
+  const createContact = useMutation((api as any).contacts.createContact);
+  const deleteContact = useMutation((api as any).contacts.deleteContact);
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   const [email, setEmail] = useState('');
@@ -114,7 +113,7 @@ export function UsersPage({}: Props) {
                 <TableColumn>ACTIONS</TableColumn>
               </TableHeader>
               <TableBody>
-                {contacts.map((contact) => (
+                {contacts.map((contact: any) => (
                   <TableRow key={contact._id}>
                     <TableCell>{contact.email}</TableCell>
                     <TableCell>{contact.name || '-'}</TableCell>
